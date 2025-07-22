@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>ToDo PWA</title>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md space-y-6">
+    <h1 class="text-3xl font-bold text-center text-indigo-600">Grouped To-Do List</h1>
+
+    <form onsubmit="addGroup(event)" class="flex gap-2">
+      <input id="groupName" type="text" placeholder="New Group Name" required
+        class="flex-1 px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+      <button type="submit"
+        class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">Add</button>
+    </form>
+
+    <div id="groupList" class="space-y-4"></div>
+  </div>
+
+  <script>
+    let data = [];
+
+    function saveData() {
+      localStorage.setItem('todoGroups', JSON.stringify(data));
+    }
+
+    function loadData() {
+      const stored = localStorage.getItem('todoGroups');
+      if (stored) data = JSON.parse(stored);
+    }
+
+    function addGroup(e) {
+      e.preventDefault();
+      const name = document.getElementById('groupName').value.trim();
+      if (!name) return;
+      data.push({ name, items: [] });
+      saveData();
+      render();
+      e.target.reset();
+    }
+
+    function addTodo(e, groupIndex) {
+      e.preventDefault();
+      const title = document.getElementById(`title-${groupIndex}`).value.trim();
+      const desc = document.getElementById(`desc-${groupIndex}`).value.trim();
+      if (!title) return;
+      data[groupIndex].items.push({ title, description: desc, completed: false });
+      saveData();
+      render();
+    }
+
+    function del(groupIndex, itemIndex) {
+      data[groupIndex].items.splice(itemIndex, 1);
+      saveData();
+      render();
+    }
+
+    function toggle(groupIndex, itemIndex) {
+      data[groupIndex].items[itemIndex].completed = !data[groupIndex].items[itemIndex].completed;
+      saveData();
+      render();
+    }
+
+    function render() {
+      const list = document.getElementById("groupList");
+      list.innerHTML = data.map((group, groupIndex) => `
+        <div class="bg-white rounded shadow p-4">
+          <h2 class="text-xl font-semibold text-indigo-700 mb-3">${group.name}</h2>
+          <form onsubmit="addTodo(event, ${groupIndex})" class="space-y-2 mb-3">
+            <input id="title-${groupIndex}" type="text" placeholder="Task Title" required
+              class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-300">
+            <input id="desc-${groupIndex}" type="text" placeholder="Optional Description"
+              class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <button type="submit"
+              class="w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition">Add Task</button>
+          </form>
+
+          <div class="space-y-2">
+            ${group.items.map((todo, i) => `
+              <div class="p-3 rounded border ${todo.completed ? 'bg-green-100 line-through' : 'bg-gray-50'} flex justify-between items-start">
+                <div class="cursor-pointer" onclick="toggle(${groupIndex}, ${i})">
+                  <p class="font-medium">${todo.title}</p>
+                  ${todo.description ? `<p class="text-sm text-gray-500">${todo.description}</p>` : ''}
+                </div>
+                <button onclick="del(${groupIndex}, ${i})" class="text-red-500 hover:text-red-700">✖</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // On load
+    window.addEventListener("DOMContentLoaded", () => {
+      loadData();
+      render();
+    });
+  </script>
+</body>
+
+</html>
